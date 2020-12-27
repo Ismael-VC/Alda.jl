@@ -1,0 +1,17 @@
+name = "Alda"
+uuid = "88388336-07c7-4b13-b8ea-64b9b2948eb6"
+authors = ["Ismael Venegas Castelló <ismael.vc1337@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+ReplMaker = "b873ce64-0db9-51f5-a568-4457d8e49576"
+
+[compat]
+julia = "1.5.1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
