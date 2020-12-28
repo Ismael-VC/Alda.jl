@@ -6,6 +6,9 @@ Alda is a text-based programming language for music composition.
 module Alda
 
 
+using JSON
+
+
 "Path to the Alda executable."
 _ALDA_EXECUTABLE = "alda"
 
@@ -23,6 +26,7 @@ julia> Alda.alda_executable()
 """
 alda_executable() = _ALDA_EXECUTABLE
 
+
 """
     alda_executable!(path::AbstractString)
 
@@ -36,6 +40,7 @@ julia> Alda.alda_executable!("/path/to/alda")
 ```
 """
 alda_executable!(path::AbstractString) = (global _ALDA_EXECUTABLE = path)
+
 
 "Path to the default Alda history file used by `play!`."
 _HISTORY_FILE = tempname()
@@ -54,6 +59,7 @@ julia> Alda.history_file()
 """
 history_file() = _HISTORY_FILE
 
+
 """
     history_file!(path::AbstractString)
 
@@ -67,6 +73,7 @@ julia> Alda.history_file!("/path/to/new/default/history/file")
 ```
 """
 history_file!(path::AbstractString) = (global _HISTORY_FILE = path)
+
 
 """
     alda_history()
@@ -86,6 +93,7 @@ function alda_history()::String
     end
 end
 
+
 """
     clear_history!()
 
@@ -100,6 +108,7 @@ julia> Alda.clear_history!()
 ```
 """
 clear_history!() = history_file!(tempname())
+
 
 """
     alda(
@@ -162,6 +171,7 @@ function alda(
 
     return nothing
 end
+
 
 """
     help()
@@ -277,6 +287,7 @@ Usage: alda [options] [command] [command options]
 """
 help() = alda("help")
 
+
 """
     update()
 
@@ -290,6 +301,7 @@ Your version of alda (1.4.3) is up to date!
 ```
 """
 update() = alda("update")
+
 
 """
     repl()
@@ -324,6 +336,7 @@ julia>
 """
 repl() = alda("repl")
 
+
 """
     up()
 
@@ -341,6 +354,7 @@ julia> Alda.up()
 """
 up() = alda("up")
 
+
 """
     down()
 
@@ -355,6 +369,7 @@ julia> Alda.down()
 ```
 """
 down() = alda("down")
+
 
 """
     downup()
@@ -376,6 +391,7 @@ julia> Alda.downup()
 """
 downup() = alda("downup")
 
+
 """
     list()
 
@@ -390,6 +406,7 @@ Sorry -- listing running processes is not currently supported for Windows users.
 """
 list() = alda("list")
 
+
 """
     status()
 
@@ -403,6 +420,7 @@ julia> Alda.status()
 ```
 """
 status() = alda("status")
+
 
 """
     version()
@@ -419,6 +437,7 @@ Server version: [27713] 1.4.3
 """
 version() = alda("version")
 
+
 """
     stop()
 
@@ -432,6 +451,7 @@ julia> Alda.stop()
 ```
 """
 stop() = alda("stop")
+
 
 """
     instruments()
@@ -458,12 +478,128 @@ julia> Alda.instruments()
 """
 instruments() = readlines(`$(alda_executable()) instruments`)
 
-"Display the result of parsing Alda code."
-function parse()
+
+"""
+    parse(
+        code::AbstractString;
+        file::AbstractString = "",
+        output::AbstractString = "data"
+    )
+
+Display the result of parsing Alda code.
+
+# Positional arguments
+
+* `code::AbstractString`: String of Alda code.
+
+# Keyword arguments
+
+* `file::Bool = false`: `true` if `code` should be interpreted as the path to
+                        read Alda code from a file.
+* `output::AbstractString="data"`: Return the output as "data" or "events".
+
+# Examples
+
+```julia-repl
+julia> Alda.parse("piano: c d e f g a b > c")
+Dict{String,Any} with 11 entries:
+  "current-instruments" => Any["piano-qSHe5"]
+  "chord-mode"          => false
+  "instruments"         => Dict{String,Any}("piano-qSHe5"=>Dict{String,Any}("...
+  "tempo/values"        => Dict{String,Any}("0"=>120)
+  "events"              => Any[Dict{String,Any}("duration"=>450.0,"volume"=>1...
+  "markers"             => Dict{String,Any}("start"=>0)
+  "beats-tally-default" => nothing
+  "global-attributes"   => Dict{String,Any}()
+  "beats-tally"         => nothing
+  "cram-level"          => 0
+  "nicknames"           => Dict{String,Any}()
+```
+"""
+function parse(
+        code::AbstractString;
+        file::Bool = false,
+        output::AbstractString = "data"
+    )
+
+    cmd = []
+
+    foreach(x -> push!(cmd, x), ["--output", output])
+
+    foreach(
+        x -> push!(cmd, x),
+        file ? ["--file", code] : ["--code", "\"$code\""]
+    )
+
+    output_flag, output, code_flag, code = cmd
+
+    return JSON.parse(read(
+        `$(alda_executable()) parse $output_flag $output $code_flag $code`,
+        String
+    ))
 end
-"Evaluate Alda code and export the score to another format."
-function export!()
+
+
+"""
+    export!(
+        code::AbstractString,
+        output::AbstractString;
+        file::AbstractString = "",
+        output_format::AbstractString = "midi"
+    )
+
+Evaluate Alda code and export the score to another format.
+
+# Positional arguments
+
+* `code::AbstractString`: String of Alda code.
+* `output::AbstractString`: The output filename.
+
+# Keyword arguments
+
+* `file::Bool = false`: `true` if `code` should be interpreted as the path to
+                        read Alda code from a file.
+* `output_format::AbstractString = "midi"`: The output format (midi).
+
+# Examples
+```julia-repl
+julia> Alda.export("piano: c d e f g a b > c", output = "out.midi")
+[27713] Parsing/evaluating...
+[27713] Done.
+```
+"""
+function export!(
+        code::AbstractString,
+        output::AbstractString;
+        file::Bool = false,
+        output_format::AbstractString = "midi"
+    )
+
+    cmd = []
+
+    foreach(x -> push!(cmd, x), ["--output", output])
+    foreach(x -> push!(cmd, x), ["--output-format", output_format])
+
+    foreach(
+        x -> push!(cmd, x),
+        file ? ["--file", code] : ["--code", "\"$code\""]
+    )
+
+    output_flag, output, format_flag, format, code_flag, code = cmd
+
+    run(
+        ```
+        $(alda_executable())
+        export
+        $output_flag $output
+        $format_flag $format
+        $code_flag $code
+        ```
+    )
+
+    return nothing
 end
+
 
 """
     play(
@@ -530,6 +666,7 @@ function play(
     return nothing
 end
 
+
 """
     play!(
         code::AbstractString;
@@ -575,6 +712,7 @@ function play!(
         to::AbstractString = "",
         history_file::AbstractString = ""
     )
+
     cmd = ["play"]
 
     foreach(
@@ -606,6 +744,7 @@ function play!(
     return nothing
 end
 
+
 """
     @p_str(code)
 
@@ -623,10 +762,15 @@ macro p_str(code)
     play(code)
 end
 
+
 """
     @p!_str(code)
 
 Alda `play!` (with defaults) non standard string macro literal.
+
+History can still be specified by setting:
+
+* `alda_history!("path/to/new/default/history_file")`
 
 # Examples
 
