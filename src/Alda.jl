@@ -126,6 +126,12 @@ julia> downup()  # or alda_downup, Alda.downup
 [27713] Ready ?
 0
 
+julia> is_up()  # or `alda_is_up()`
+true
+
+julia> is_down()  # or `alda_is_down()`
+false
+
 julia> list()  # or alda_list, Alda.list
 Sorry -- listing running processes is not currently supported for Windows users.
 0
@@ -247,7 +253,8 @@ export @p_str, @p!_str,
        play, alda_play,
        play!, alda_play!,
        is_up, alda_is_up,
-       is_down, alda_is_down
+       is_down, alda_is_down,
+       n, note
 
 
 "Path to the Alda executable."
@@ -1107,9 +1114,7 @@ function alda_play(
         file ? ["--file", code] : ["--code", "\"$code\""]
     )
 
-    alda(cmd...)
-
-    return nothing
+    return alda(cmd...)
 end
 
 
@@ -1166,8 +1171,8 @@ function alda_play!(
         [
             "--history-file",
             !isempty(history_file) ?
-                      history_file :
-                      alda_history_file()
+                     history_file  :
+                     alda_history_file()
         ]
     )
 
@@ -1176,18 +1181,27 @@ function alda_play!(
 
     foreach(x -> push!(cmd, x), ["--code", code])
 
+    exitcode = 0
+
     open(
             !isempty(history_file) ? history_file : alda_history_file(),
             append = true
         ) do file
-        try
-            alda(cmd...)
-            write(file, code * "\n")
-        catch
+
+        exitcode = begin
+            try
+                ex_code = alda(cmd...)
+                write(file, code * "\n")
+                ex_code
+            catch e
+                cmd = e.procs[1].cmd
+                @show cmd
+                e.procs[1].exitcode
+            end
         end
     end
 
-    return nothing
+    return exitcode
 end
 
 
@@ -1239,6 +1253,79 @@ macro p!_str(code)
 end
 
 
+at_marker(name::AbstractString)::String = "@$name"
+barline()::String = "|"
+
+
+const SymStr = Union{Symbol, AbstractString}
+const NumStr = Union{Number, AbstractString}
+const BoolSymStr = Union{Bool, Symbol, AbstractString}
+
+
+function note(
+        ;
+        pitch::SymStr = "",
+        accidental::SymStr = "",
+        duration::NumStr = 0,
+        slur::BoolSymStr = false
+    )::String
+
+    pitch = lowercase(string(pitch))
+    valid_pitch = pitch in ["a", "b", "c", "d", "e", "f", "g", ""]
+    pitch = isa(pitch, Symbol) ? string(pitch) : pitch
+    pitch = valid_pitch ?
+            pitch       :
+            throw(ArgumentError("Invalid pitch value: $pitch"))
+
+    accidental = isa(accidental, Symbol) ? string(accidental) : accidental
+    accidental = lowercase(accidental)
+    valid_accidental = accidental in [
+        "flat", "f", "b", "-",
+        "sharp", "s", "#", "+",
+        ""
+    ]
+    accidental = valid_accidental ?
+                 accidental       :
+                 throw(ArgumentError("Invalid accidental value: $accidental"))
+
+    accidental = accidental in ["flat", "f", "b", "-"]   ? "-" :
+                 accidental in ["sharp", "s", "#", "+",] ? "+" :
+                 ""
+
+    duration = isa(duration, AbstractString) ?
+               parse(Float64, duration)      :
+               duration
+
+    duration = duration == 0 ? ""       :
+               duration > 0  ? duration :
+               throw(ArgumentError("Invalid duration value: $duration"))
+
+    slur = isa(slur, Bool) || isa(slur, Symbol) ? string(slur) : slur
+    slur = isa(slur, String) ? lowercase(slur) in ["~", "s", "slur", "true"] :
+           throw(ArgumentError("Invalid slur value: $slur"))
+    slur = slur ? '~' : ""
+
+    return "$pitch$accidental$duration$slur"
+end
+
+note(pitch)::String = note(pitch = pitch)
+note(pitch, accidental)::String = note(
+    pitch = pitch,
+    accidental = accidental
+)
+note(pitch, accidental, duration)::String = note(
+    pitch = pitch,
+    accidental = accidental,
+    duration = duration
+)
+note(pitch, accidental, duration, slur)::String = note(
+    pitch = pitch,
+    accidental = accidental,
+    duration = duration,
+    slur = slur
+)
+
+
 const executable = alda_executable
 const executable! = alda_executable!
 const history_file = alda_history_file
@@ -1262,6 +1349,7 @@ const play = alda_play
 const play! = alda_play!
 const is_up = alda_is_up
 const is_down = alda_is_down
+const n = note
 
 
 end  # module
