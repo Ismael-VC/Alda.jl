@@ -151,7 +151,7 @@ function alda(
     )
 
     cmd = [
-        ALDA_EXECUTABLE,
+        alda_executable(),
         "--host", host,
         "--port", port,
         "--timeout", timeout,
