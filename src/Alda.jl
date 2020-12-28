@@ -66,6 +66,7 @@ julia> clear_history!()  # or alda_clear_history, Alda.clear_history
 julia> alda("play", "-c", "piano: c d e f g a b > c")
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> help()  # or alda_help, Alda.help
 Usage: alda [options] [command] [command options]
@@ -75,9 +76,11 @@ Usage: alda [options] [command] [command options]
        Default: false
     -H, --host
  ⋮
+ 0
 
 julia> update()  # or alda_update, Alda.update
 Your version of alda (1.4.3) is up to date!
+0
 
 julia> repl()  # or alda_repl, Alda.repl
  ?????? ???     ???????  ??????
@@ -98,38 +101,47 @@ h> c d e f g a b > c
 h>
 You have unsaved changes. Are you sure you want to quit?
 (y)es, (n)o
+0
 
 julia> down()  # or alda_down, Alda.down
 [27713] Stopping Alda server...
 [27713] Server down ?
+0
 
 julia> up()  # or alda_up, Alda.up
 [27713] Starting Alda server...
 [27713] Server up ?
 [27713] Starting worker processes...
 [27713] Ready ?
+0
 
 julia> downup()  # or alda_downup, Alda.downup
 [27713] Stopping Alda server...
 [27713] Server down ?
+0
 
 [27713] Starting Alda server...
 [27713] Server up ?
 [27713] Starting worker processes...
 [27713] Ready ?
+0
 
 julia> list()  # or alda_list, Alda.list
 Sorry -- listing running processes is not currently supported for Windows users.
+0
 
 julia> status()  # or alda_status, Alda.status
 [27713] Server up (2/2 workers available, backend port: 50235)
+0
 
 julia> version()  # or alda_version, Alda.version
 Client version: 1.4.3
 Server version: [27713] 1.4.3
+0
 
 julia> stop()  # or alda_stop, Alda.stop()
 [27713] Stopping playback...
+0
 
 julia> instruments()  # or alda_instruments, Alda.instruments
 129-element Array{String,1}:
@@ -162,38 +174,47 @@ Dict{String,Any} with 11 entries:
 julia> export!("piano: c d e f g a b > c", output = "out.midi")  # or alda_export, Alda.export!
 [27713] Parsing/evaluating...
 [27713] Done.
+0
 
 julia> Alda.play("piano: c d e f g a b > c")  # or alda_play, Alda.play
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> play!("piano: c d e f g a b > c")  # Using default history file (or alda_play!, Alda.play!)
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> play!("harmonica:")  # Change instrument to harmonica.
 [27713] Parsing/evaluating...
 [27713] Done.
+0
 
 julia> play!("c d e f g a b > c")  # Same scale with harmonica.
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> p"piano: c d e f g a b > c"  # alda_play string  macro
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> p!"piano: c d e f g a b > c"    # alda_play! string macro
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> p!"harmonica:"
 [27713] Parsing/evaluating...
 [27713] Done.
+0
 
 julia> p!"c d e f g a b > c"
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 ```
 """
 module Alda
@@ -224,16 +245,20 @@ export @p_str, @p!_str,
        parse!, alda_parse,
        export!, alda_export!,
        play, alda_play,
-       play!, alda_play!
+       play!, alda_play!,
+       is_up, alda_is_up,
+       is_down, alda_is_down
 
 
 "Path to the Alda executable."
 _ALDA_EXECUTABLE = "alda"
 
 """
-    alda_executable()
+    alda_executable()::String
 
-Path to the Alda executable.
+The path to the `alda` executable.
+
+The default value is `"alda"`, which will depend on your system `PATH`.
 
 # Examples
 
@@ -242,11 +267,11 @@ julia> alda_executable()  # or `executable()`
 "alda"
 ```
 """
-alda_executable() = _ALDA_EXECUTABLE
+alda_executable()::String = _ALDA_EXECUTABLE
 
 
 """
-    alda_executable!(path::AbstractString)
+    alda_executable!(path::AbstractString)::String
 
 Set the path to the Alda executable.
 
@@ -257,14 +282,14 @@ julia> alda_executable!("/path/to/alda")  # or `executable!("/path/to/alda")`
 "/path/to/alda"
 ```
 """
-alda_executable!(path::AbstractString) = (global _ALDA_EXECUTABLE = path)
+alda_executable!(path::AbstractString)::String = (global _ALDA_EXECUTABLE = string(path))
 
 
 "Path to the default Alda history file used by `play!`."
 _HISTORY_FILE = tempname()
 
 """
-    alda_history_file()
+    alda_history_file()::String
 
 Path to the default Alda history file used by `play!`.
 
@@ -275,11 +300,11 @@ julia> alda_history_file()  # or `history_file()`
 "/path/to/default/temporary/history/file"
 ```
 """
-alda_history_file() = _HISTORY_FILE
+alda_history_file()::String = _HISTORY_FILE
 
 
 """
-    alda_history_file!(path::AbstractString)
+    alda_history_file!(path::AbstractString)::String
 
 Set the path to the default Alda history file used by `play!`.
 
@@ -290,13 +315,20 @@ julia> alda_history_file!("/new/history/file")  # or `history_file!("/new/histor
 "/new/history/file"
 ```
 """
-alda_history_file!(path::AbstractString) = (global _HISTORY_FILE = path)
+alda_history_file!(path::AbstractString)::String = (global _HISTORY_FILE = string(path))
 
 
 """
-    alda_history()
+    alda_history()::String
 
-A string representing the score so far.
+A string representing the score so far. This is used as the value of the
+`--history` option for the `alda play` command when calling `alda_play!`.
+
+This provides Alda with context about the score, including which instrument is
+active, its current octave, current default note length, etc.
+
+Each time `alda_play!` is successful, the string of code that was played is
+appended to the Alda history.
 
 # Examples
 
@@ -317,7 +349,7 @@ end
 
 
 """
-    alda_clear_history!()
+    alda_clear_history!()::String
 
 Clear Alda default history used by `play!` by setting a new temporary history
 file and returning its path.
@@ -329,7 +361,7 @@ julia> alda_clear_history!()  # or `clear_history!()`
 "path/to/new/default/temporal/history/file"
 ```
 """
-alda_clear_history!() = history_file!(tempname())
+alda_clear_history!()::String = history_file!(tempname())
 
 
 """
@@ -342,9 +374,16 @@ alda_clear_history!() = history_file!(tempname())
         quiet::Bool = false,
         no_color::Bool = false,
         verbose::Bool = false
-    )
+    )::Int
 
 Wrapper to the Alda executable.
+
+Invokes `alda` at the command line, using `commands` as arguments.
+
+The return value is the exit code of the `alda` process.
+
+If the exit code is non-zero, an ex-info is thrown, including context about the
+ result and what command was run.
 
 # Positional arguments
 
@@ -367,6 +406,14 @@ Wrapper to the Alda executable.
 julia> alda("play", "-c", "piano: c d e f g a b > c")
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
+
+julia> alda("foo")
+Expected a command, got foo
+
+For usage instructions, see --help.
+cmd = `alda --host localhost --port 27713 --timeout 30 --workers 2 foo`
+3
 ```
 """
 function alda(
@@ -378,7 +425,7 @@ function alda(
         quiet::Bool = false,
         no_color::Bool = false,
         verbose::Bool = false
-    )
+    )::Int
 
     cmd = [
         alda_executable(),
@@ -397,14 +444,23 @@ function alda(
     no_color && push!(cmd, "--no-color")
 
     cmd = `$cmd $commands`
-    run(cmd)
 
-    return nothing
+    exitcode = begin
+        try
+            run(cmd).exitcode
+        catch e
+            cmd = e.procs[1].cmd
+            @show cmd
+            e.procs[1].exitcode
+        end
+    end
+
+    return exitcode
 end
 
 
 """
-    alda_help()
+    alda_help()::Int
 
 Display Alda executable help text.
 
@@ -513,13 +569,14 @@ Usage: alda [options] [command] [command options]
              The output filename
           -F, --output-format
              The output format (options: midi)
+0
 ```
 """
-alda_help() = alda("help")
+alda_help()::Int = alda("help")
 
 
 """
-    alda_update()
+    alda_update()::Int
 
 Download and install the latest release of Alda.
 
@@ -528,13 +585,14 @@ Download and install the latest release of Alda.
 ```julia-repl
 julia> alda_update()  # or `update()`
 Your version of alda (1.4.3) is up to date!
+0
 ```
 """
-alda_update() = alda("update")
+alda_update()::Int = alda("update")
 
 
 """
-    alda_repl()
+    alda_repl()::Int
 
 Start an interactive Alda REPL session.
 
@@ -560,15 +618,16 @@ h> c d e f g a b > c
 h>
 You have unsaved changes. Are you sure you want to quit?
 (y)es, (n)o
+0
 
 julia>
 ```
 """
-alda_repl() = alda("repl")
+alda_repl()::Int = alda("repl")
 
 
 """
-    alda_up()
+    alda_up()::Int
 
 Start the Alda server.
 
@@ -580,13 +639,14 @@ julia> alda_up()  # or `up()`
 [27713] Server up ?
 [27713] Starting worker processes...
 [27713] Ready ?
+0
 ```
 """
-alda_up() = alda("up")
+alda_up()::Int = alda("up")
 
 
 """
-    alda_down()
+    alda_down()::Int
 
 Stop the Alda server.
 
@@ -596,13 +656,43 @@ Stop the Alda server.
 julia> alda_down()  # or `down()`
 [27713] Stopping Alda server...
 [27713] Server down ?
+0
 ```
 """
-alda_down() = alda("down")
+alda_down()::Int = alda("down")
 
 
 """
-    alda_downup()
+    alda_is_up()::Bool
+
+Whether the alda server is down.
+
+# Examples
+
+```julia-repl
+julia> alda_is_up()  # or `is_up()`
+true
+```
+"""
+alda_is_up()::Bool = occursin("up", read(`$(alda_executable()) status`, String))
+
+"""
+    alda_is_down()::Bool
+
+Whether the alda server is down.
+
+# Examples
+
+```julia-repl
+julia> alda_is_down()  # or `is_down()`
+false
+```
+"""
+alda_is_down()::Bool = occursin("down", read(`$(alda_executable()) status`, String))
+
+
+"""
+    alda_downup()::Int
 
 Restart the Alda server.
 
@@ -617,13 +707,14 @@ julia> alda_downup()  # or `downup()`
 [27713] Server up ?
 [27713] Starting worker processes...
 [27713] Ready ?
+0
 ```
 """
-alda_downup() = alda("downup")
+alda_downup()::Int = alda("downup")
 
 
 """
-    alda_list()
+    alda_list()::Int
 
 List running Alda servers/workers.
 
@@ -632,13 +723,14 @@ List running Alda servers/workers.
 ```julia-repl
 julia> alda_list()  # or `list()`
 Sorry -- listing running processes is not currently supported for Windows users.
+0
 ```
 """
-alda_list() = alda("list")
+alda_list()::Int = alda("list")
 
 
 """
-    alda_status()
+    alda_status()::Int
 
 Display whether the Alda server is up.
 
@@ -647,13 +739,14 @@ Display whether the Alda server is up.
 ```julia-repl
 julia> alda_status()  # or `status()`
 [27713] Server up (2/2 workers available, backend port: 50235)
+0
 ```
 """
-alda_status() = alda("status")
+alda_status()::Int = alda("status")
 
 
 """
-    alda_version()
+    alda_version()::Int
 
 Display the version of the Alda client and server.
 
@@ -663,13 +756,14 @@ Display the version of the Alda client and server.
 julia> alda_version()  # or `version()`
 Client version: 1.4.3
 Server version: [27713] 1.4.3
+0
 ```
 """
-alda_version() = alda("version")
+alda_version()::Int = alda("version")
 
 
 """
-    alda_stop()
+    alda_stop()::Int
 
 Stop playback.
 
@@ -678,13 +772,14 @@ Stop playback.
 ```julia-repl
 julia> alda_stop()  # or `stop()`
 [27713] Stopping playback...
+0
 ```
 """
-alda_stop() = alda("stop")
+alda_stop()::Int = alda("stop")
 
 
 """
-    alda_instruments()
+    alda_instruments()::Vector{String}
 
 Return an array of available instruments.
 
@@ -706,7 +801,139 @@ julia> alda_instruments()  # or `instruments()`
  "midi-percussion"
 ```
 """
-alda_instruments() = readlines(`$(alda_executable()) instruments`)
+function alda_instruments()::Vector{String}
+    return [
+        "midi-acoustic-grand-piano",
+        "midi-bright-acoustic-piano",
+        "midi-electric-grand-piano",
+        "midi-honky-tonk-piano",
+        "midi-electric-piano-1",
+        "midi-electric-piano-2",
+        "midi-harpsichord",
+        "midi-clavi",
+        "midi-celesta",
+        "midi-glockenspiel",
+        "midi-music-box",
+        "midi-vibraphone",
+        "midi-marimba",
+        "midi-xylophone",
+        "midi-tubular-bells",
+        "midi-dulcimer",
+        "midi-drawbar-organ",
+        "midi-percussive-organ",
+        "midi-rock-organ",
+        "midi-church-organ",
+        "midi-reed-organ",
+        "midi-accordion",
+        "midi-harmonica",
+        "midi-tango-accordion",
+        "midi-acoustic-guitar-nylon",
+        "midi-acoustic-guitar-steel",
+        "midi-electric-guitar-jazz",
+        "midi-electric-guitar-clean",
+        "midi-electric-guitar-palm-muted",
+        "midi-electric-guitar-overdrive",
+        "midi-electric-guitar-distorted",
+        "midi-electric-guitar-harmonics",
+        "midi-acoustic-bass",
+        "midi-electric-bass-finger",
+        "midi-electric-bass-pick",
+        "midi-fretless-bass",
+        "midi-bass-slap",
+        "midi-bass-pop",
+        "midi-synth-bass-1",
+        "midi-synth-bass-2",
+        "midi-violin",
+        "midi-viola",
+        "midi-cello",
+        "midi-contrabass",
+        "midi-tremolo-strings",
+        "midi-pizzicato-strings",
+        "midi-orchestral-harp",
+        "midi-timpani",
+        "midi-string-ensemble-1",
+        "midi-string-ensemble-2",
+        "midi-synth-strings-1",
+        "midi-synth-strings-2",
+        "midi-choir-aahs",
+        "midi-voice-oohs",
+        "midi-synth-voice",
+        "midi-orchestra-hit",
+        "midi-trumpet",
+        "midi-trombone",
+        "midi-tuba",
+        "midi-muted-trumpet",
+        "midi-french-horn",
+        "midi-brass-section",
+        "midi-synth-brass-1",
+        "midi-synth-brass-2",
+        "midi-soprano-saxophone",
+        "midi-alto-saxophone",
+        "midi-tenor-saxophone",
+        "midi-baritone-saxophone",
+        "midi-oboe",
+        "midi-english-horn",
+        "midi-bassoon",
+        "midi-clarinet",
+        "midi-piccolo",
+        "midi-flute",
+        "midi-recorder",
+        "midi-pan-flute",
+        "midi-bottle",
+        "midi-shakuhachi",
+        "midi-whistle",
+        "midi-ocarina",
+        "midi-square-lead",
+        "midi-saw-wave",
+        "midi-calliope-lead",
+        "midi-chiffer-lead",
+        "midi-charang",
+        "midi-solo-vox",
+        "midi-fifths",
+        "midi-bass-and-lead",
+        "midi-synth-pad-new-age",
+        "midi-synth-pad-warm",
+        "midi-synth-pad-polysynth",
+        "midi-synth-pad-choir",
+        "midi-synth-pad-bowed",
+        "midi-synth-pad-metallic",
+        "midi-synth-pad-halo",
+        "midi-synth-pad-sweep",
+        "midi-fx-rain",
+        "midi-fx-soundtrack",
+        "midi-fx-crystal",
+        "midi-fx-atmosphere",
+        "midi-fx-brightness",
+        "midi-fx-goblins",
+        "midi-fx-echoes",
+        "midi-fx-sci-fi",
+        "midi-sitar",
+        "midi-banjo",
+        "midi-shamisen",
+        "midi-koto",
+        "midi-kalimba",
+        "midi-bagpipes",
+        "midi-fiddle",
+        "midi-shehnai",
+        "midi-tinkle-bell",
+        "midi-agogo",
+        "midi-steel-drums",
+        "midi-woodblock",
+        "midi-taiko-drum",
+        "midi-melodic-tom",
+        "midi-synth-drum",
+        "midi-reverse-cymbal",
+        "midi-guitar-fret-noise",
+        "midi-breath-noise",
+        "midi-seashore",
+        "midi-bird-tweet",
+        "midi-telephone-ring",
+        "midi-helicopter",
+        "midi-applause",
+        "midi-gunshot",
+        "midi-percussion"
+    ]
+end
 
 
 """
@@ -714,7 +941,7 @@ alda_instruments() = readlines(`$(alda_executable()) instruments`)
         code::AbstractString;
         file::AbstractString = "",
         output::AbstractString = "data"
-    )
+    )::Dict{String, Any}
 
 Display the result of parsing Alda code.
 
@@ -731,7 +958,7 @@ Display the result of parsing Alda code.
 # Examples
 
 ```julia-repl
-julia> alda_parse("piano: c d e f g a b > c")  # or `parse!("piano: c d e f g a b > c")`
+julia> alda_parse("piano: c d e f g a b > c")  # or `parse!(...)`
 Dict{String,Any} with 11 entries:
   "current-instruments" => Any["piano-qSHe5"]
   "chord-mode"          => false
@@ -750,23 +977,22 @@ function alda_parse(
         code::AbstractString;
         file::Bool = false,
         output::AbstractString = "data"
-    )
+    )::Dict{String, Any}
 
-    cmd = []
-
-    foreach(x -> push!(cmd, x), ["--output", output])
+    cmd = [
+        alda_executable(),
+        "parse",
+        "--output", output,
+    ]
 
     foreach(
         x -> push!(cmd, x),
         file ? ["--file", code] : ["--code", "\"$code\""]
     )
 
-    output_flag, output, code_flag, code = cmd
+    cmd = `$cmd`
 
-    return JSON.parse(read(
-        `$(alda_executable()) parse $output_flag $output $code_flag $code`,
-        String
-    ))
+    return JSON.parse(read(cmd, String))
 end
 
 
@@ -776,7 +1002,7 @@ end
         output::AbstractString;
         file::AbstractString = "",
         output_format::AbstractString = "midi"
-    )
+    )::Int
 
 Evaluate Alda code and export the score to another format.
 
@@ -803,31 +1029,20 @@ function alda_export(
         output::AbstractString;
         file::Bool = false,
         output_format::AbstractString = "midi"
-    )
+    )::Int
 
-    cmd = []
-
-    foreach(x -> push!(cmd, x), ["--output", output])
-    foreach(x -> push!(cmd, x), ["--output-format", output_format])
+    cmd = [
+        "export",
+        "--output", output,
+        "--output-format", output_format,
+    ]
 
     foreach(
         x -> push!(cmd, x),
         file ? ["--file", code] : ["--code", "\"$code\""]
     )
 
-    output_flag, output, format_flag, format, code_flag, code = cmd
-
-    run(
-        ```
-        $(alda_executable())
-        export
-        $output_flag $output
-        $format_flag $format
-        $code_flag $code
-        ```
-    )
-
-    return nothing
+    return alda(cmd...)
 end
 
 
@@ -839,7 +1054,7 @@ end
         to::AbstractString = "",
         history::AbstractString = "",
         history_file::AbstractString = ""
-    )
+    )::Int
 
 Evaluate and play Alda code.
 
@@ -874,7 +1089,7 @@ function alda_play(
         to::AbstractString = "",
         history::AbstractString = "",
         history_file::AbstractString = ""
-    )
+    )::Int
 
     cmd = ["play"]
 
@@ -904,7 +1119,7 @@ end
         from::AbstractString = "",
         to::AbstractString = "",
         history_file::AbstractString = ""
-    )
+    )::Int
 
 Evaluate, play and save (if successful) Alda code to the default history
 if no `history_file` is specified.
@@ -942,7 +1157,7 @@ function alda_play!(
         from::AbstractString = "",
         to::AbstractString = "",
         history_file::AbstractString = ""
-    )
+    )::Int
 
     cmd = ["play"]
 
@@ -952,7 +1167,7 @@ function alda_play!(
             "--history-file",
             !isempty(history_file) ?
                       history_file :
-                      _HISTORY_FILE
+                      alda_history_file()
         ]
     )
 
@@ -962,7 +1177,7 @@ function alda_play!(
     foreach(x -> push!(cmd, x), ["--code", code])
 
     open(
-            !isempty(history_file) ? history_file : _HISTORY_FILE,
+            !isempty(history_file) ? history_file : alda_history_file(),
             append = true
         ) do file
         try
@@ -1045,6 +1260,8 @@ const parse! = alda_parse
 const export! = alda_export
 const play = alda_play
 const play! = alda_play!
+const is_up = alda_is_up
+const is_down = alda_is_down
 
 
 end  # module

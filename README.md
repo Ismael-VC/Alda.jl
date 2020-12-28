@@ -65,6 +65,7 @@ julia> clear_history!()  # or alda_clear_history, Alda.clear_history
 julia> alda("play", "-c", "piano: c d e f g a b > c")
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> help()  # or alda_help, Alda.help
 Usage: alda [options] [command] [command options]
@@ -74,9 +75,11 @@ Usage: alda [options] [command] [command options]
        Default: false
     -H, --host
  ⋮
+ 0
 
 julia> update()  # or alda_update, Alda.update
 Your version of alda (1.4.3) is up to date!
+0
 
 julia> repl()  # or alda_repl, Alda.repl
  ?????? ???     ???????  ??????
@@ -97,38 +100,47 @@ h> c d e f g a b > c
 h>
 You have unsaved changes. Are you sure you want to quit?
 (y)es, (n)o
+0
 
 julia> down()  # or alda_down, Alda.down
 [27713] Stopping Alda server...
 [27713] Server down ?
+0
 
 julia> up()  # or alda_up, Alda.up
 [27713] Starting Alda server...
 [27713] Server up ?
 [27713] Starting worker processes...
 [27713] Ready ?
+0
 
 julia> downup()  # or alda_downup, Alda.downup
 [27713] Stopping Alda server...
 [27713] Server down ?
+0
 
 [27713] Starting Alda server...
 [27713] Server up ?
 [27713] Starting worker processes...
 [27713] Ready ?
+0
 
 julia> list()  # or alda_list, Alda.list
 Sorry -- listing running processes is not currently supported for Windows users.
+0
 
 julia> status()  # or alda_status, Alda.status
 [27713] Server up (2/2 workers available, backend port: 50235)
+0
 
 julia> version()  # or alda_version, Alda.version
 Client version: 1.4.3
 Server version: [27713] 1.4.3
+0
 
 julia> stop()  # or alda_stop, Alda.stop()
 [27713] Stopping playback...
+0
 
 julia> instruments()  # or alda_instruments, Alda.instruments
 129-element Array{String,1}:
@@ -161,36 +173,45 @@ Dict{String,Any} with 11 entries:
 julia> export!("piano: c d e f g a b > c", output = "out.midi")  # or alda_export, Alda.export!
 [27713] Parsing/evaluating...
 [27713] Done.
+0
 
 julia> Alda.play("piano: c d e f g a b > c")  # or alda_play, Alda.play
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> play!("piano: c d e f g a b > c")  # Using default history file (or alda_play!, Alda.play!)
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> play!("harmonica:")  # Change instrument to harmonica.
 [27713] Parsing/evaluating...
 [27713] Done.
+0
 
 julia> play!("c d e f g a b > c")  # Same scale with harmonica.
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> p"piano: c d e f g a b > c"  # alda_play string  macro
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> p!"piano: c d e f g a b > c"    # alda_play! string macro
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 
 julia> p!"harmonica:"
 [27713] Parsing/evaluating...
 [27713] Done.
+0
 
 julia> p!"c d e f g a b > c"
 [27713] Parsing/evaluating...
 [27713] Playing...
+0
 ```
